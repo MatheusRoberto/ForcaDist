@@ -12,7 +12,7 @@
 
 
 ### Iniciar servidor:
-	<p>Rodar classe Servidor.java em src/servidor/app</p>
+	Rodar classe Servidor.java em src/servidor/app
 
 ### Iniciar Cliente
-	<p>Rodar classe ClienteGUI.java em src/cliente/app/frame</p>
+	Rodar classe ClienteGUI.java em src/cliente/app/frame
