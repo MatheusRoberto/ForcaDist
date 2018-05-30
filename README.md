@@ -1,9 +1,18 @@
-Jogo da Forca, Disciplica Sistemas Distribuídos
+#Jogo da Forca, Disciplica Sistemas Distribuídos
 
-Linguagem: Java
+##Linguagem: Java
 
-Iniciar servidor:
-	Rodar classe Servidor.java em src/servidor/app
+<ul>
+	<li>ServerSocket</li>
+	<li>Socket</li>
+	<li>PrintStream</li>
+	<li>BufferedReader</li>
+	<li>JSONObject</li>
+</ul>
 
-Iniciar Cliente
-	Rodar classe ClienteGUI.java em src/cliente/app/frame
+
+###Iniciar servidor:
+	<p> Rodar classe Servidor.java em src/servidor/app </p>
+
+###Iniciar Cliente
+	<p> Rodar classe ClienteGUI.java em src/cliente/app/frame </p>
