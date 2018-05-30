@@ -1,6 +1,6 @@
-#Jogo da Forca, Disciplica Sistemas Distribuídos
+# Jogo da Forca, Disciplica Sistemas Distribuídos
 
-##Linguagem: Java
+## Linguagem: Java
 
 <ul>
 	<li>ServerSocket</li>
@@ -11,8 +11,8 @@
 </ul>
 
 
-###Iniciar servidor:
+### Iniciar servidor:
 	<p> Rodar classe Servidor.java em src/servidor/app </p>
 
-###Iniciar Cliente
+### Iniciar Cliente
 	<p> Rodar classe ClienteGUI.java em src/cliente/app/frame </p>
