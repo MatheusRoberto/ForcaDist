@@ -357,7 +357,7 @@ public class ClientGUI extends JFrame {
 				String s;
 				while ((s = input.readLine().trim()) != null) {
 					jsonObject = new JSONObject(s);
-					System.out.println(jsonObject.toString());
+					System.out.println("Recebeu: "+jsonObject.toString());
 					switch (jsonObject.getInt("id")) {
 					case 2:
 						conectar(jsonObject);

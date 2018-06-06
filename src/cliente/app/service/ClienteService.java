@@ -25,7 +25,7 @@ public class ClienteService {
     }
     
     public void send(JSONObject jsonObject) throws IOException {
-    	System.out.println(jsonObject.toString());
+    	System.out.println("Enviou: "+jsonObject.toString());
     	output.println(jsonObject.toString());
     }
 }

@@ -76,7 +76,7 @@ public class ServidorService extends Thread {
 				String s;
 				while ((s = input.readLine()) != null) {
 					jsonObject = new JSONObject(s);
-					System.out.println(jsonObject.toString());
+					System.out.println("Recebeu: "+jsonObject.toString());
 					switch (jsonObject.getInt("id")) {
 					case 1:
 						boolean isConnect = connect(jsonObject, output);
@@ -172,14 +172,14 @@ public class ServidorService extends Thread {
 		}
 
 		private void send(JSONObject json, PrintWriter output) throws IOException {
-			System.out.println(json.toString());
+			System.out.println("Enviou: "+json.toString());
 			output.println(json.toString());
 		}
 
 		private void sendAll(JSONObject json, PrintWriter output) throws JSONException {
-			System.out.println(json.toString());
 			for (Map.Entry<String, PrintWriter> kv : mapOnlines.entrySet()) {
 				if (!kv.getValue().equals(output)) {
+					System.out.println("Enviou para "+kv.getKey()+": "+json.toString());
 					kv.getValue().println(json.toString());
 				}
 			}
@@ -195,8 +195,8 @@ public class ServidorService extends Thread {
 			jsonObject.put("id", 3);
 			jsonObject.put("qtdClientes", mapOnlines.size());
 			jsonObject.put("nome", setNames);
-			System.out.println(jsonObject.toString());
 			for (Map.Entry<String, PrintWriter> kv : mapOnlines.entrySet()) {
+				System.out.println("Enviou para "+kv.getKey()+": "+jsonObject.toString());
 				kv.getValue().println(jsonObject.toString());
 
 			}
@@ -219,7 +219,7 @@ public class ServidorService extends Thread {
 			if (key) {
 				JSONObject jsonObject = new JSONObject();
 				jsonObject.put("id", 9);
-				// System.out.println("todos prontos, inicia jogo");
+				System.out.println("todos prontos, inicia jogo");
 				sendAll(jsonObject, null);
 				iniciado = true;
 				rodada = mapOnlines.size() - 1;
@@ -237,6 +237,7 @@ public class ServidorService extends Thread {
 				if (!ordem.contains(numSorteado))
 					ordem.add(numSorteado);
 			}
+			System.out.println("Mestre: "+ordem.get(rodada));
 			selecionaMestre(mapOnlines.get(sorteio.get(ordem.get(rodada))));
 		}
 
