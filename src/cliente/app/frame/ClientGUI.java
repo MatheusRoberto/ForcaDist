@@ -38,6 +38,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import javax.swing.SwingConstants;
 
 public class ClientGUI extends JFrame {
 
@@ -48,6 +49,7 @@ public class ClientGUI extends JFrame {
 	private Socket socket;
 	private ClienteService service;
 	private boolean conectado = false;
+	private ArrayList<JButton> teclado = new ArrayList<>();
 
 	private JPanel contentPane;
 	private JTextField txtIp;
@@ -68,6 +70,8 @@ public class ClientGUI extends JFrame {
 	private JTextField txtTextoChat;
 	private JTextArea txtrChat;
 	private JLabel lblPalavra;
+	private JPanel panelLetras;
+	private JPanel panelPalavra;
 
 	/**
 	 * Launch the application.
@@ -229,10 +233,23 @@ public class ClientGUI extends JFrame {
 		panelForca.setBounds(12, 46, 609, 210);
 		panelJogo.add(panelForca);
 		panelForca.setLayout(null);
+		
+		panelPalavra = new JPanel();
+		panelPalavra.setBorder(new LineBorder(new Color(0, 0, 0)));
+		panelPalavra.setBounds(12, 12, 438, 67);
+		panelForca.add(panelPalavra);
+		panelPalavra.setLayout(null);
 
 		lblQuantidadeDeLetras = new JLabel("Quantidade de Letras: ");
-		lblQuantidadeDeLetras.setBounds(12, 12, 221, 15);
-		panelForca.add(lblQuantidadeDeLetras);
+		lblQuantidadeDeLetras.setBounds(12, 0, 221, 15);
+		panelPalavra.add(lblQuantidadeDeLetras);
+		
+				lblPalavra = new JLabel("");
+				lblPalavra.setVerticalAlignment(SwingConstants.BOTTOM);
+				lblPalavra.setHorizontalAlignment(SwingConstants.CENTER);
+				lblPalavra.setBounds(12, 12, 414, 40);
+				panelPalavra.add(lblPalavra);
+				lblPalavra.setFont(new Font("Dialog", Font.BOLD, 22));
 
 		panel = new JPanel();
 		panel.setLayout(null);
@@ -245,11 +262,10 @@ public class ClientGUI extends JFrame {
 		listVez.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		listVez.setBounds(12, 31, 111, 143);
 		panel.add(listVez);
-
-		lblPalavra = new JLabel("");
-		lblPalavra.setFont(new Font("Dialog", Font.BOLD, 22));
-		lblPalavra.setBounds(12, 39, 432, 40);
-		panelForca.add(lblPalavra);
+		
+		panelLetras = new JPanel();
+		panelLetras.setBounds(12, 91, 446, 107);
+		panelForca.add(panelLetras);
 
 		txtChute = new JTextField();
 		txtChute.setEnabled(false);
@@ -326,12 +342,30 @@ public class ClientGUI extends JFrame {
 		btnEnviar.setEnabled(false);
 		btnEnviar.setBounds(410, 333, 117, 25);
 		panelChat.add(btnEnviar);
-		//geraTeclado();
+		geraTeclado();
 	}
 
 	private void geraTeclado() {
 		for (int i = 'a'; i <= 'z'; i++) {
-			System.out.println(Character.toUpperCase((char) i));
+			JButton button = new JButton(String.valueOf(Character.toUpperCase((char) i)));
+			button.setText(String.valueOf(Character.toUpperCase((char) i)));
+			button.setEnabled(false);
+			button.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					// TODO Auto-generated method stub
+					JButton b = (JButton) e.getSource();
+					try {
+						chutaLetra(b.getText().charAt(0));
+					} catch (JSONException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+			});
+			panelLetras.add(button);
+			teclado.add(button);
 		}
 	}
 
@@ -374,6 +408,9 @@ public class ClientGUI extends JFrame {
 					case 12:
 						jogar(jsonObject);
 						break;
+					case 14:
+						recebeLetra(jsonObject);
+						break;
 					case 21:
 						imprimeVez(jsonObject);
 						break;
@@ -409,6 +446,10 @@ public class ClientGUI extends JFrame {
 		this.btnEnviar.setEnabled(true);
 		this.cbPrivado.setEnabled(true);
 		
+		for (JButton jButton : teclado) {
+			jButton.setEnabled(true);
+		}
+		
 		conectado = true;
 
 		// JOptionPane.showMessageDialog(this, "Você está conectado!", "Você está
@@ -434,6 +475,10 @@ public class ClientGUI extends JFrame {
 		listVez.setModel(listModel);
 		this.lblQuantidadeDeLetras.setText("Quantidade de Letras: ");
 		this.lblPalavra.setText("");
+		
+		for (JButton jButton : teclado) {
+			jButton.setEnabled(false);
+		}
 		
 		conectado = false;
 		socket = null;
@@ -473,17 +518,22 @@ public class ClientGUI extends JFrame {
 			e.printStackTrace();
 		}
 	}
-
-	private void jogar(JSONObject json) throws JSONException {
-		lblQuantidadeDeLetras
-				.setText(lblQuantidadeDeLetras.getText() + " " + String.valueOf(json.getInt("TamanhoPalavra")));
-
+	
+	private void imprimePalavra(int tamanho) {
 		String palavra = new String();
-		for (int i = 0; i < json.getInt("TamanhoPalavra"); i++) {
+		for (int i = 0; i < tamanho; i++) {
 			palavra = palavra + "_ ";
 		}
 
 		lblPalavra.setText(palavra);
+	}
+
+	private void jogar(JSONObject json) throws JSONException {
+		lblQuantidadeDeLetras
+				.setText(lblQuantidadeDeLetras.getText() + " " + String.valueOf(json.getInt("TamanhoPalavra")));
+		
+		imprimePalavra(json.getInt("TamanhoPalavra"));
+
 		imprimeVez(json);
 	}
 
@@ -541,5 +591,21 @@ public class ClientGUI extends JFrame {
 		} else {
 			txtrChat.append(json.getString("emissor") + " disse: " + json.getString("mensagem") + "\n");
 		}
+	}
+	
+	private void chutaLetra(char c) throws JSONException {
+		JSONObject json = new JSONObject();
+		json.put("id", 13);
+		json.put("letra", Character.toLowerCase(c));
+		try {
+			service.send(json);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void recebeLetra(JSONObject json) {
+		System.out.println(json.toString());
 	}
 }

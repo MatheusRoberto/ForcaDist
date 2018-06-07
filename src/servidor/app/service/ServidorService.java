@@ -28,6 +28,7 @@ public class ServidorService extends Thread {
 	private ArrayList<Integer> ordem;
 	private boolean iniciado = false;
 	private int rodada = 0;
+	private String palavra;
 
 	public void conectar(int p) {
 		this.porta = p;
@@ -99,6 +100,9 @@ public class ServidorService extends Thread {
 						break;
 					case 11:
 						palavraEscolhida(jsonObject, output);
+						break;
+					case 13:
+						confereLetra(jsonObject, output);
 						break;
 					}
 				}
@@ -237,7 +241,7 @@ public class ServidorService extends Thread {
 				if (!ordem.contains(numSorteado))
 					ordem.add(numSorteado);
 			}
-			System.out.println("Mestre: "+ordem.get(rodada));
+			System.out.println("Mestre: "+sorteio.get(ordem.get(rodada)));
 			selecionaMestre(mapOnlines.get(sorteio.get(ordem.get(rodada))));
 		}
 
@@ -263,7 +267,7 @@ public class ServidorService extends Thread {
 		}
 
 		private void palavraEscolhida(JSONObject json, PrintWriter output) throws JSONException {
-
+			palavra = json.getString("palavra");
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put("id", 12);
 			jsonObject.put("TamanhoPalavra", json.getString("palavra").length());
@@ -312,6 +316,25 @@ public class ServidorService extends Thread {
 			jsonObject.put("vez", enviaVez(output));
 
 			sendAll(jsonObject, null);
+		}
+		
+		private void confereLetra(JSONObject json, PrintWriter output) throws JSONException {
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put("id", 14);
+			jsonObject.put("letra", json.get("letra"));
+			if (palavra.indexOf(json.getInt("letra")) != -1) 
+				jsonObject.put("correto", true);
+			else 
+				jsonObject.put("correto", false);
+			
+			try {
+				send(jsonObject, output);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
 		}
 	}
 
