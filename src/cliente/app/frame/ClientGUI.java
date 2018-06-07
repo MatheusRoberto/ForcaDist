@@ -268,6 +268,18 @@ public class ClientGUI extends JFrame {
 		panelForca.add(panelLetras);
 
 		txtChute = new JTextField();
+		txtChute.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent arg0) {
+				if(!txtChute.getText().isEmpty())
+				try {
+					chutaPalavra(txtChute.getText());
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
 		txtChute.setEnabled(false);
 		txtChute.setBounds(121, 268, 331, 19);
 		panelJogo.add(txtChute);
@@ -276,6 +288,21 @@ public class ClientGUI extends JFrame {
 		JLabel lblPalavraChute = new JLabel("Palavra Chute:");
 		lblPalavraChute.setBounds(12, 270, 104, 15);
 		panelJogo.add(lblPalavraChute);
+		
+		JButton btnChutar = new JButton("Chutar");
+		btnChutar.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if(!txtChute.getText().isEmpty())
+				try {
+					chutaPalavra(txtChute.getText());
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
+		btnChutar.setBounds(481, 265, 117, 25);
+		panelJogo.add(btnChutar);
 
 		JPanel panelChat = new JPanel();
 		panelChat.setBorder(new BevelBorder(BevelBorder.RAISED, null, null, null, null));
@@ -411,6 +438,8 @@ public class ClientGUI extends JFrame {
 					case 14:
 						recebeLetra(jsonObject);
 						break;
+					case 18:
+						verificaOpiniao(jsonObject);
 					case 21:
 						imprimeVez(jsonObject);
 						break;
@@ -594,11 +623,11 @@ public class ClientGUI extends JFrame {
 	}
 	
 	private void chutaLetra(char c) throws JSONException {
-		JSONObject json = new JSONObject();
-		json.put("id", 13);
-		json.put("letra", Character.toLowerCase(c));
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("id", 13);
+		jsonObject.put("letra", Character.toLowerCase(c));
 		try {
-			service.send(json);
+			service.send(jsonObject);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -607,5 +636,33 @@ public class ClientGUI extends JFrame {
 	
 	private void recebeLetra(JSONObject json) {
 		System.out.println(json.toString());
+	}
+	
+	private void chutaPalavra(String s) throws JSONException {
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("id", 16);
+		jsonObject.put("palavra", s);
+		try {
+			service.send(jsonObject);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void verificaOpiniao(JSONObject json) throws JSONException {
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("id", 19);
+		JLabel lblPalavra = new JLabel("Palavra: "+json.getString("palavra"));
+		JLabel lblMestre = new JLabel("Mestre: "+json.getString("nome"));
+		Object[] texts = { lblPalavra, lblMestre };
+		Object[] options = { "Sim", "Não" };
+		int opcao = JOptionPane.showOptionDialog(null, texts, "Aceita Palavra?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+		if(opcao == JOptionPane.YES_OPTION)
+			jsonObject.put("verificado", true);
+		else
+			jsonObject.put("verificado", false);
+		
+		System.out.println(jsonObject);
 	}
 }

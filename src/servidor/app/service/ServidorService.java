@@ -336,6 +336,23 @@ public class ServidorService extends Thread {
 			
 			
 		}
+		
+		@SuppressWarnings("unused")
+		private void verificaPalavra() throws JSONException {
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put("id", 18);
+			jsonObject.put("palavra", palavra);
+			jsonObject.put("nome", sorteio.get(ordem.get(rodada)));
+			
+			sendAll(jsonObject, mapOnlines.get(sorteio.get(ordem.get(rodada))));
+		}
+		
+		@SuppressWarnings("unused")
+		private void palavraVerificada(JSONObject json) throws JSONException {
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put("id", 20);
+			jsonObject.put("palavraAceita", true);
+		}
 	}
 
 }
