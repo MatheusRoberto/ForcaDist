@@ -17,17 +17,20 @@ import java.util.Set;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ServidorService extends Thread {
+import cliente.app.util.Cliente;
+
+public class ServidorService {
 
 	private int porta;
 	private ServerSocket serverSocket;
 	private Socket socket;
-	private HashMap<String, PrintWriter> mapOnlines = new HashMap<>();
-	private ArrayList<PrintWriter> prontos = new ArrayList<>();
-	private ArrayList<String> sorteio;
-	private ArrayList<Integer> ordem;
+	private HashMap<String, Cliente> mapOnlines = new HashMap<>();
+	private ArrayList<Cliente> prontos = new ArrayList<>();
+	private ArrayList<Cliente> sorteio = new ArrayList<>();
+	private ArrayList<Cliente> ordem;
+	private HashMap<String, JSONObject> mapPacotes = new HashMap<>();
 	private boolean iniciado = false;
-	private int rodada = 0;
+	private boolean acertaram = false;
 	private String palavra;
 
 	public void conectar(int p) {
@@ -40,16 +43,15 @@ public class ServidorService extends Thread {
 				new Thread(new ListenerSocket(socket)).start();
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	public HashMap<String, PrintWriter> getMapOnlines() {
+	public HashMap<String, Cliente> getMapOnlines() {
 		return mapOnlines;
 	}
 
-	public void setMapOnlines(HashMap<String, PrintWriter> mapOnlines) {
+	public void setMapOnlines(HashMap<String, Cliente> mapOnlines) {
 		this.mapOnlines = mapOnlines;
 	}
 
@@ -57,65 +59,77 @@ public class ServidorService extends Thread {
 
 		private PrintWriter output;
 		private BufferedReader input;
+		private Socket sock;
+		private Cliente cliente;
 
 		public ListenerSocket(Socket s) {
-			// TODO Auto-generated constructor stub
 			try {
+				sock = s;
 				this.output = new PrintWriter(s.getOutputStream(), true);
 				this.input = new BufferedReader(new InputStreamReader(s.getInputStream()));
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 
 		@Override
 		public void run() {
-			// TODO Auto-generated method stub
+
 			JSONObject jsonObject;
 			try {
 				String s;
 				while ((s = input.readLine()) != null) {
 					jsonObject = new JSONObject(s);
-					System.out.println("Recebeu: "+jsonObject.toString());
+					if (cliente != null) {
+						System.out.println("Recebeu de " + cliente.getNome() + ": " + jsonObject.toString());
+						cliente.setTempoUltimoPacote(System.currentTimeMillis());
+					} else
+						System.out.println("Recebeu de " + sock.getInetAddress() + ":" + sock.getPort() + " :"
+								+ jsonObject.toString());
 					switch (jsonObject.getInt("id")) {
 					case 1:
 						boolean isConnect = connect(jsonObject, output);
 						if (isConnect) {
-							mapOnlines.put((String) jsonObject.get("nome"), output);
+							cliente = new Cliente(jsonObject.getString("nome"), output, sock.getInetAddress(),
+									sock.getPort());
+							cliente.setTempoUltimoPacote(System.currentTimeMillis());
+							mapOnlines.put(jsonObject.getString("nome"), cliente);
 							sendOnlines();
 						}
 						break;
 					case 4:
-						disconnect(output);
+						disconnect(cliente);
 						break;
 					case 5:
-						chatAll(jsonObject, output);
+						chatAll(jsonObject, cliente);
 						break;
 					case 6:
-						chatPrivate(jsonObject, output);
+						chatPrivate(jsonObject, cliente);
 						break;
 					case 8:
-						prontoJogo(output);
+						prontoJogo(cliente);
 						break;
 					case 11:
-						palavraEscolhida(jsonObject, output);
+						palavraEscolhida(jsonObject, cliente);
 						break;
 					case 13:
-						confereLetra(jsonObject, output);
+						confereLetra(jsonObject, cliente);
+						break;
+					case 16:
+						chutaPalavra(jsonObject, cliente);
+						break;
+					case 19:
+						palavraVerificada(jsonObject, cliente);
 						break;
 					}
 				}
 			} catch (IOException e) {
-				// TODO: handle exception
 				try {
-					disconnect(output);
+					disconnect(cliente);
 				} catch (JSONException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			} catch (JSONException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
@@ -126,7 +140,8 @@ public class ServidorService extends Thread {
 			if (mapOnlines.size() < 6 && !mapOnlines.containsKey(json.getString("nome")) && !iniciado) {
 				jsonObject.put("id", 2);
 				jsonObject.put("conectou", true);
-				send(jsonObject, output);
+				System.out.println("Enviou para " + json.getString("nome") + ": " + jsonObject.toString());
+				output.println(jsonObject.toString());
 				return true;
 			} else {
 				jsonObject.put("id", 2);
@@ -137,35 +152,27 @@ public class ServidorService extends Thread {
 					jsonObject.put("motivo", "Nome já existente");
 				else
 					jsonObject.put("motivo", "Jogo já iniciado");
-				send(jsonObject, output);
+				System.out.println("Enviou para " + json.getString("nome") + ": " + jsonObject.toString());
+				output.println(jsonObject.toString());
 				return false;
 			}
 		}
 
-		private void disconnect(PrintWriter output) throws JSONException {
-			HashMap<String, PrintWriter> novos = new HashMap<>();
-			for (Map.Entry<String, PrintWriter> kv : mapOnlines.entrySet()) {
-				if (!kv.getValue().equals(output))
+		private void disconnect(Cliente cliente) throws JSONException {
+			HashMap<String, Cliente> novos = new HashMap<>();
+			for (Map.Entry<String, Cliente> kv : mapOnlines.entrySet()) {
+				if (!kv.getValue().getOutput().equals(output))
 					novos.put(kv.getKey(), kv.getValue());
 				else {
-					int rem = -1;
-					int idex = 0;
 					if (iniciado) {
-						for (int i = 0; i < ordem.size(); i++) {
-							if (ordem.get(i) > rem) {
-								rem = ordem.get(i);
-								idex = i;
-							}
-						}
-						ordem.remove(idex);
-						sorteio.remove(kv.getKey());
+						ordem.remove(cliente);
+						sorteio.remove(cliente);
 					}
 				}
 			}
-			prontos.remove(output);
+			prontos.remove(cliente);
 			if (iniciado) {
-				rodada--;
-				desconexao(mapOnlines.get(sorteio.get(ordem.get(rodada))));
+				desconexao(cliente);
 			}
 			mapOnlines = novos;
 
@@ -175,23 +182,23 @@ public class ServidorService extends Thread {
 			sendOnlines();
 		}
 
-		private void send(JSONObject json, PrintWriter output) throws IOException {
-			System.out.println("Enviou: "+json.toString());
-			output.println(json.toString());
+		private void send(JSONObject json, Cliente cliente) throws IOException {
+			System.out.println("Enviou para " + cliente.getNome() + ": " + json.toString());
+			cliente.getOutput().println(json.toString());
 		}
 
-		private void sendAll(JSONObject json, PrintWriter output) throws JSONException {
-			for (Map.Entry<String, PrintWriter> kv : mapOnlines.entrySet()) {
-				if (!kv.getValue().equals(output)) {
-					System.out.println("Enviou para "+kv.getKey()+": "+json.toString());
-					kv.getValue().println(json.toString());
+		private void sendAll(JSONObject json, Cliente cliente) throws JSONException {
+			for (Map.Entry<String, Cliente> kv : mapOnlines.entrySet()) {
+				if (!kv.getValue().equals(cliente)) {
+					System.out.println("Enviou para " + kv.getKey() + ": " + json.toString());
+					kv.getValue().getOutput().println(json.toString());
 				}
 			}
 		}
 
 		private void sendOnlines() throws JSONException {
 			Set<String> setNames = new HashSet<String>();
-			for (Entry<String, PrintWriter> kv : mapOnlines.entrySet()) {
+			for (Entry<String, Cliente> kv : mapOnlines.entrySet()) {
 				setNames.add(kv.getKey());
 			}
 
@@ -199,17 +206,17 @@ public class ServidorService extends Thread {
 			jsonObject.put("id", 3);
 			jsonObject.put("qtdClientes", mapOnlines.size());
 			jsonObject.put("nome", setNames);
-			for (Map.Entry<String, PrintWriter> kv : mapOnlines.entrySet()) {
-				System.out.println("Enviou para "+kv.getKey()+": "+jsonObject.toString());
-				kv.getValue().println(jsonObject.toString());
+			for (Map.Entry<String, Cliente> kv : mapOnlines.entrySet()) {
+				System.out.println("Enviou para " + kv.getKey() + ": " + jsonObject.toString());
+				kv.getValue().getOutput().println(jsonObject.toString());
 
 			}
 		}
 
-		private void prontoJogo(PrintWriter output) throws JSONException {
-			prontos.add(output);
+		private void prontoJogo(Cliente cliente) throws JSONException {
+			cliente.setPronto(true);
+			prontos.add(cliente);
 			iniciaJogo();
-			// System.out.println(prontos);
 		}
 
 		private void iniciaJogo() throws JSONException {
@@ -226,61 +233,67 @@ public class ServidorService extends Thread {
 				System.out.println("todos prontos, inicia jogo");
 				sendAll(jsonObject, null);
 				iniciado = true;
-				rodada = mapOnlines.size() - 1;
 				sorteio();
 			}
 		}
 
 		private void sorteio() throws JSONException {
-			sorteio = new ArrayList<String>(mapOnlines.keySet());
+			ArrayList<Cliente> s = new ArrayList<Cliente>(mapOnlines.values());
 			Random r = new Random();
 			ordem = new ArrayList<>();
 
 			while (ordem.size() < mapOnlines.size()) {
 				int numSorteado = r.nextInt(mapOnlines.size());
-				if (!ordem.contains(numSorteado))
-					ordem.add(numSorteado);
+				if (!ordem.contains(s.get(numSorteado))) {
+					s.get(numSorteado).setOrdem(numSorteado);
+					s.get(numSorteado).setErros(6 / mapOnlines.size());
+					ordem.add(s.get(numSorteado));
+				}
 			}
-			System.out.println("Mestre: "+sorteio.get(ordem.get(rodada)));
-			selecionaMestre(mapOnlines.get(sorteio.get(ordem.get(rodada))));
+			for (Cliente cliente : ordem) {
+				//System.out.println(cliente.getNome() + " " + cliente.getOrdem());
+				sorteio.add(cliente);
+			}
+			System.out.println("Mestre: " + ordem.get(0).getNome());
+			selecionaMestre(ordem.get(0));
 		}
 
-		private void selecionaMestre(PrintWriter outputStream) throws JSONException {
+		private void selecionaMestre(Cliente cliente) throws JSONException {
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put("id", 10);
 
 			try {
-				send(jsonObject, outputStream);
+				send(jsonObject, cliente);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 
-		private ArrayList<String> enviaVez(PrintWriter output) {
+		private ArrayList<String> enviaVez(Cliente cliente) {
 			ArrayList<String> setNames = new ArrayList<String>();
 			for (int i = 0; i < ordem.size(); i++) {
-				if (!mapOnlines.get(sorteio.get(ordem.get(i))).equals(output))
-					setNames.add(sorteio.get(ordem.get(i)));
+				if (!ordem.get(i).equals(cliente))
+					setNames.add(ordem.get(i).getNome());
 			}
 			return setNames;
 		}
 
-		private void palavraEscolhida(JSONObject json, PrintWriter output) throws JSONException {
+		private void palavraEscolhida(JSONObject json, Cliente cliente) throws JSONException {
 			palavra = json.getString("palavra");
+			acertaram = false;
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put("id", 12);
 			jsonObject.put("TamanhoPalavra", json.getString("palavra").length());
-			jsonObject.put("vez", enviaVez(output));
+			jsonObject.put("vez", enviaVez(cliente));
 
 			sendAll(jsonObject, null);
 
 		}
 
-		private void chatAll(JSONObject json, PrintWriter output) throws JSONException {
+		private void chatAll(JSONObject json, Cliente cliente) throws JSONException {
 			JSONObject jsonObject = new JSONObject();
-			for (Entry<String, PrintWriter> kv : mapOnlines.entrySet()) {
-				if (kv.getValue().equals(output))
+			for (Entry<String, Cliente> kv : mapOnlines.entrySet()) {
+				if (kv.getValue().equals(cliente))
 					jsonObject.put("emissor", kv.getKey());
 			}
 
@@ -288,13 +301,13 @@ public class ServidorService extends Thread {
 			jsonObject.put("broadcast", true);
 			jsonObject.put("mensagem", json.get("mensagem"));
 
-			sendAll(jsonObject, output);
+			sendAll(jsonObject, cliente);
 		}
 
-		private void chatPrivate(JSONObject json, PrintWriter output) throws JSONException {
+		private void chatPrivate(JSONObject json, Cliente cliente) throws JSONException {
 			JSONObject jsonObject = new JSONObject();
-			for (Entry<String, PrintWriter> kv : mapOnlines.entrySet()) {
-				if (kv.getValue().equals(output))
+			for (Entry<String, Cliente> kv : mapOnlines.entrySet()) {
+				if (kv.getValue().equals(cliente))
 					jsonObject.put("emissor", kv.getKey());
 			}
 
@@ -305,54 +318,177 @@ public class ServidorService extends Thread {
 			try {
 				send(jsonObject, mapOnlines.get(json.getString("destinatario")));
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 
-		private void desconexao(PrintWriter output) throws JSONException {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", 21);
-			jsonObject.put("vez", enviaVez(output));
+		private void desconexao(Cliente cliente) throws JSONException {
+			if (!ordem.isEmpty()) {
+				JSONObject jsonObject = new JSONObject();
+				jsonObject.put("id", 21);
+				jsonObject.put("vez", enviaVez(ordem.get(0)));
 
-			sendAll(jsonObject, null);
+				sendAll(jsonObject, cliente);
+			}
 		}
-		
-		private void confereLetra(JSONObject json, PrintWriter output) throws JSONException {
+
+		private void confereLetra(JSONObject json, Cliente cliente) throws JSONException {
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put("id", 14);
 			jsonObject.put("letra", json.get("letra"));
-			if (palavra.indexOf(json.getInt("letra")) != -1) 
+			if (palavra.indexOf(json.getInt("letra")) != -1)
 				jsonObject.put("correto", true);
-			else 
+			else {
 				jsonObject.put("correto", false);
-			
+				cliente.setErros(cliente.getErros() - 1);
+				if (cliente.getErros() == 0) {
+					ordem.remove(cliente);
+					desconexao(cliente);
+				}
+			}
+
 			try {
-				send(jsonObject, output);
+				send(jsonObject, cliente);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
-			
+
+			if (ordem.size() < 2)
+				verificaPalavra();
+
 		}
-		
-		@SuppressWarnings("unused")
+
+		private void chutaPalavra(JSONObject json, Cliente cliente) throws JSONException {
+			if (json.getString("palavra").equals(palavra)) {
+				acertaram = true;
+				cliente.setAcertou(true);
+				verificaPalavra();
+			} else {
+				JSONObject jsonObject = new JSONObject();
+				ordem.remove(cliente);
+				jsonObject.put("id", 17);
+				jsonObject.put("palavra", json.getString("palavra"));
+				if (ordem.size() < 2)
+					verificaPalavra();
+				else {
+					jsonObject.put("vez", enviaVez(ordem.get(0)));
+
+					sendAll(jsonObject, null);
+				}
+			}
+
+		}
+
 		private void verificaPalavra() throws JSONException {
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put("id", 18);
 			jsonObject.put("palavra", palavra);
-			jsonObject.put("nome", sorteio.get(ordem.get(rodada)));
-			
-			sendAll(jsonObject, mapOnlines.get(sorteio.get(ordem.get(rodada))));
+			jsonObject.put("nome", ordem.get(0).getNome());
+
+			sendAll(jsonObject, ordem.get(0));
 		}
-		
-		@SuppressWarnings("unused")
-		private void palavraVerificada(JSONObject json) throws JSONException {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("id", 20);
-			jsonObject.put("palavraAceita", true);
+
+		private void palavraVerificada(JSONObject json, Cliente cliente) throws JSONException {
+			boolean key = true;
+			mapPacotes.put(cliente.getNome(), json);
+			if (mapPacotes.size() >= (mapOnlines.size() - 1)) {
+				for (Entry<String, Cliente> kv : mapOnlines.entrySet()) {
+					if (!mapPacotes.containsKey(kv.getKey()) && !kv.getValue().equals(ordem.get(0))) {
+						System.out.println("Entrou");
+						System.out.println(kv.getKey() + " " + kv.getValue().getOrdem() + " "
+								+ !mapPacotes.containsKey(kv.getKey()));
+						key = false;
+					}
+				}
+				if (key) {
+					// Seta opiniao da palavra
+					for (Entry<String, JSONObject> kv : mapPacotes.entrySet()) {
+						mapOnlines.get(kv.getKey()).setAceita(kv.getValue().getBoolean("verificado"));
+					}
+					// Verifica qtde de aceito
+					int ac = 0;
+					for (Entry<String, Cliente> kv : mapOnlines.entrySet()) {
+						if (kv.getValue().isAceita())
+							ac++;
+					}
+					// Verifica se qtde é maior
+					boolean palavraAc = false;
+					if ((mapPacotes.size() - ac) <= ac)
+						palavraAc = true;
+
+					// Limpa mapa de pacotes
+					mapPacotes.clear();
+
+					// Se a palavra for aceita, fa Contagem de pontos
+					if (palavraAc)
+						contaPontos();
+					// contagem de pontos
+
+					// Cria pacote de retorno
+					JSONObject jsonObject = new JSONObject();
+					jsonObject.put("id", 20);
+					jsonObject.put("palavraAceita", palavraAc);
+					ArrayList<String> nomes = new ArrayList<>();
+					ArrayList<Integer> pontos = new ArrayList<>();
+					for (Entry<String, Cliente> kv : mapOnlines.entrySet()) {
+						nomes.add(kv.getKey());
+						pontos.add(kv.getValue().getPontos());
+					}
+					JSONObject clientes = new JSONObject();
+					clientes.put("nomes", nomes);
+					clientes.put("pontos", pontos);
+					jsonObject.put("clientes", clientes);
+
+					sendAll(jsonObject, null);
+					novaRodada();
+				}
+			}
 		}
+
+		private void alteraOrdem() {
+			ordem.clear();
+			for (int i = 1; i < sorteio.size(); i++) {
+				sorteio.get(i).setOrdem(i - 1);
+				sorteio.get(i).setErros(6 / mapOnlines.size());
+				sorteio.get(i).setAcertou(false);
+				ordem.add(sorteio.get(i));
+			}
+			sorteio.get(0).setOrdem(sorteio.size() - 1);
+			ordem.add(sorteio.get(0));
+
+			sorteio.clear();
+
+			for (Cliente cliente : ordem) {
+				sorteio.add(cliente);
+			}
+		}
+
+		private void novaRodada() throws JSONException {
+			boolean key = true;
+			for (Entry<String, Cliente> kv : mapOnlines.entrySet()) {
+				if (kv.getValue().getPontos() >= 5)
+					key = false;
+			}
+			if (key) {
+				alteraOrdem();
+				System.out.println("Mestre: " + ordem.get(0).getNome());
+				selecionaMestre(ordem.get(0));
+			}
+		}
+
+		private void contaPontos() {
+			if (acertaram) {
+				for (Cliente cliente : sorteio) {
+					if (cliente.isAcertou()) {
+						cliente.setPontos(cliente.getPontos() + 1);
+					}
+				}
+			} else {
+				ordem.get(0).setPontos(ordem.get(0).getPontos() + 2);
+			}
+
+		}
+
 	}
 
 }
