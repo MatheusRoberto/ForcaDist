@@ -147,7 +147,7 @@ public class ClientGUI extends JFrame {
 
 		tableModel = new OnlinesTableModel();
 		tableModel.limpar();
-		
+
 		pontosTableModel = new PontosTableModel();
 		pontosTableModel.limpar();
 
@@ -283,31 +283,33 @@ public class ClientGUI extends JFrame {
 		panelLetras = new JPanel();
 		panelLetras.setBounds(12, 291, 446, 107);
 		panelForca.add(panelLetras);
-		
+
 		JPanel panelPalavrasChutadas = new JPanel();
-		panelPalavrasChutadas.setBorder(new TitledBorder(null, "Palavras Chutadas:", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		panelPalavrasChutadas.setBorder(
+				new TitledBorder(null, "Palavras Chutadas:", TitledBorder.LEADING, TitledBorder.TOP, null, null));
 		panelPalavrasChutadas.setBounds(12, 81, 446, 126);
 		panelForca.add(panelPalavrasChutadas);
 		panelPalavrasChutadas.setLayout(null);
-		
+
 		JScrollPane scrollPane_1 = new JScrollPane();
 		scrollPane_1.setBounds(10, 20, 424, 94);
 		panelPalavrasChutadas.add(scrollPane_1);
-		
+
 		textAreaPalavrasChutadas = new JTextArea();
 		textAreaPalavrasChutadas.setEditable(false);
 		scrollPane_1.setViewportView(textAreaPalavrasChutadas);
-		
+
 		panelLetrasChutadas = new JPanel();
 		panelLetrasChutadas.setLayout(null);
-		panelLetrasChutadas.setBorder(new TitledBorder(null, "Palavras Chutadas:", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		panelLetrasChutadas.setBorder(
+				new TitledBorder(null, "Palavras Chutadas:", TitledBorder.LEADING, TitledBorder.TOP, null, null));
 		panelLetrasChutadas.setBounds(12, 213, 446, 75);
 		panelForca.add(panelLetrasChutadas);
-		
+
 		JScrollPane scrollPane_2 = new JScrollPane();
 		scrollPane_2.setBounds(10, 20, 425, 50);
 		panelLetrasChutadas.add(scrollPane_2);
-		
+
 		textAreaLetrasChutadas = new JTextArea();
 		textAreaLetrasChutadas.setFont(new Font("Dialog", Font.PLAIN, 16));
 		scrollPane_2.setViewportView(textAreaLetrasChutadas);
@@ -351,7 +353,7 @@ public class ClientGUI extends JFrame {
 		});
 		btnChutar.setBounds(481, 465, 117, 25);
 		panelJogo.add(btnChutar);
-		
+
 		lblJogoIniciado = new JLabel("Jogo não iniciado");
 		lblJogoIniciado.setForeground(Color.RED);
 		lblJogoIniciado.setFont(new Font("Dialog", Font.BOLD, 16));
@@ -360,7 +362,7 @@ public class ClientGUI extends JFrame {
 
 		JPanel panelChat = new JPanel();
 		panelChat.setBorder(new BevelBorder(BevelBorder.RAISED, null, null, null, null));
-		panelChat.setBounds(667, 205, 531, 377);
+		panelChat.setBounds(667, 157, 531, 429);
 		contentPane.add(panelChat);
 		panelChat.setLayout(null);
 
@@ -416,13 +418,13 @@ public class ClientGUI extends JFrame {
 			}
 		});
 		txtTextoChat.setEnabled(false);
-		txtTextoChat.setBounds(14, 419, 370, 19);
+		txtTextoChat.setBounds(14, 395, 370, 19);
 		panelChat.add(txtTextoChat);
 		txtTextoChat.setColumns(10);
 
 		cbPrivado = new JCheckBox("Privado");
 		cbPrivado.setEnabled(false);
-		cbPrivado.setBounds(12, 393, 78, 23);
+		cbPrivado.setBounds(12, 369, 78, 23);
 		panelChat.add(cbPrivado);
 
 		btnEnviar = new JButton("Enviar");
@@ -436,20 +438,21 @@ public class ClientGUI extends JFrame {
 			}
 		});
 		btnEnviar.setEnabled(false);
-		btnEnviar.setBounds(400, 416, 117, 25);
+		btnEnviar.setBounds(400, 392, 117, 25);
 		btnEnviar.setEnabled(false);
 		panelChat.add(btnEnviar);
-		
+
 		panelPontuacao = new JPanel();
-		panelPontuacao.setBorder(new TitledBorder(null, "Pontua\u00E7\u00E3o:", TitledBorder.LEADING, TitledBorder.TOP, null, null));
-		panelPontuacao.setBounds(667, 12, 531, 181);
+		panelPontuacao.setBorder(
+				new TitledBorder(null, "Pontua\u00E7\u00E3o:", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		panelPontuacao.setBounds(667, 12, 531, 142);
 		contentPane.add(panelPontuacao);
 		panelPontuacao.setLayout(null);
-		
+
 		JScrollPane scrollPane_3 = new JScrollPane();
-		scrollPane_3.setBounds(12, 22, 507, 147);
+		scrollPane_3.setBounds(12, 22, 507, 108);
 		panelPontuacao.add(scrollPane_3);
-		
+
 		tablePontuacao = new JTable(pontosTableModel);
 		scrollPane_3.setViewportView(tablePontuacao);
 		geraTeclado();
@@ -474,6 +477,27 @@ public class ClientGUI extends JFrame {
 			});
 			panelLetras.add(button);
 			teclado.add(button);
+		}
+	}
+
+	private void interfaceJogo(boolean b) {
+		DefaultListModel<String> listModel = new DefaultListModel<String>();
+		listModel.clear();
+		listVez.setModel(listModel);
+		this.lblQuantidadeDeLetras.setText("Quantidade de Letras: ");
+		this.lblPalavra.setText("");
+		this.txtrChat.setText("");
+		if (!b) {
+			this.lblJogoIniciado.setText("Jogo não iniciado");
+			this.lblJogoIniciado.setForeground(Color.RED);
+		}
+		this.textAreaLetrasChutadas.setText("");
+		this.textAreaPalavrasChutadas.setText("");
+		this.btnChutar.setEnabled(b);
+		this.txtChute.setEnabled(b);
+
+		for (JButton jButton : teclado) {
+			jButton.setEnabled(b);
 		}
 	}
 
@@ -533,7 +557,10 @@ public class ClientGUI extends JFrame {
 						break;
 					}
 				}
-			} catch (JSONException | HeadlessException | IOException e) {
+			}catch (IOException e) {
+				// TODO: handle exception
+				desconectar();
+			} catch (JSONException | HeadlessException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -556,15 +583,6 @@ public class ClientGUI extends JFrame {
 		this.txtTextoChat.setEnabled(true);
 		this.btnEnviar.setEnabled(true);
 		this.cbPrivado.setEnabled(true);
-		this.txtChute.setEnabled(true);
-		this.btnChutar.setEnabled(true);
-		this.textAreaLetrasChutadas.setText("");
-		this.textAreaPalavrasChutadas.setText("");
-		
-
-		for (JButton jButton : teclado) {
-			jButton.setEnabled(true);
-		}
 
 		conectado = true;
 
@@ -587,21 +605,8 @@ public class ClientGUI extends JFrame {
 		this.cbPrivado.setEnabled(false);
 		this.txtChute.setEnabled(false);
 		this.btnChutar.setEnabled(false);
-		DefaultListModel<String> listModel = new DefaultListModel<String>();
-		listModel.clear();
 		tableModel.limpar();
-		listVez.setModel(listModel);
-		this.lblQuantidadeDeLetras.setText("Quantidade de Letras: ");
-		this.lblPalavra.setText("");
-		this.txtrChat.setText("");
-		this.lblJogoIniciado.setText("Jogo não iniciado");
-		this.lblJogoIniciado.setForeground(Color.RED);
-		this.textAreaLetrasChutadas.setText("");
-		this.textAreaPalavrasChutadas.setText("");
-		
-		for (JButton jButton : teclado) {
-			jButton.setEnabled(false);
-		}
+		interfaceJogo(false);
 
 		conectado = false;
 		socket = null;
@@ -628,7 +633,7 @@ public class ClientGUI extends JFrame {
 		tableOnlines.setModel(tableModel);
 
 	}
-	
+
 	public void jogoIniciado() {
 		lblJogoIniciado.setText("Jogo iniciado");
 		lblJogoIniciado.setForeground(Color.BLUE);
@@ -659,12 +664,13 @@ public class ClientGUI extends JFrame {
 	}
 
 	private void jogar(JSONObject json) throws JSONException {
-		lblQuantidadeDeLetras
-				.setText("Quantidade de Letras: " + String.valueOf(json.getInt("TamanhoPalavra")));
+		lblQuantidadeDeLetras.setText("Quantidade de Letras: " + String.valueOf(json.getInt("TamanhoPalavra")));
 
 		imprimePalavra(json.getInt("TamanhoPalavra"));
 
 		imprimeVez(json);
+
+		interfaceJogo(true);
 	}
 
 	private void imprimeVez(JSONObject json) throws JSONException {
@@ -700,7 +706,7 @@ public class ClientGUI extends JFrame {
 				jsonObject.put("mensagem", txtTextoChat.getText());
 				try {
 					service.send(jsonObject);
-					txtrChat.append("eu: " + txtTextoChat.getText() + "\n");
+					//txtrChat.append("eu: " + txtTextoChat.getText() + "\n");
 					txtTextoChat.setText("");
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -734,7 +740,8 @@ public class ClientGUI extends JFrame {
 
 	private void recebeLetra(JSONObject json) throws JSONException {
 		System.out.println(json.toString());
-		textAreaLetrasChutadas.setText(textAreaLetrasChutadas.getText()+" "+Character.toUpperCase(json.getInt("letra")));
+		textAreaLetrasChutadas
+				.setText(textAreaLetrasChutadas.getText() + " " + Character.toUpperCase(json.getInt("letra")));
 	}
 
 	private void chutaPalavra(String s) throws JSONException {
@@ -747,9 +754,9 @@ public class ClientGUI extends JFrame {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private void recebeChutePalavra(JSONObject json) throws JSONException {
-		textAreaPalavrasChutadas.setText(textAreaPalavrasChutadas.getText()+" "+json.getString("palavra"));
+		textAreaPalavrasChutadas.setText(textAreaPalavrasChutadas.getText() + " " + json.getString("palavra"));
 		imprimeVez(json);
 	}
 
@@ -774,13 +781,13 @@ public class ClientGUI extends JFrame {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private void pontuacao(JSONObject json) throws HeadlessException, JSONException {
-		if(json.getBoolean("palavraAceita"))
+		if (json.getBoolean("palavraAceita"))
 			JOptionPane.showMessageDialog(null, "Sim", "Palavra Aceita?", JOptionPane.INFORMATION_MESSAGE);
 		else
 			JOptionPane.showMessageDialog(null, "Não", "Palavra Aceita?", JOptionPane.INFORMATION_MESSAGE);
-		
+
 		ArrayList<Cliente> listaclientes = new ArrayList<>();
 		for (int i = 0; i < json.getJSONObject("clientes").getJSONArray("nomes").length(); i++) {
 			Cliente c = new Cliente();
@@ -788,7 +795,7 @@ public class ClientGUI extends JFrame {
 			c.setPontos(Integer.valueOf(json.getJSONObject("clientes").getJSONArray("pontos").get(i).toString()));
 			listaclientes.add(c);
 		}
-		
+
 		pontosTableModel.limpar();
 		pontosTableModel.addListaClientes(listaclientes);
 

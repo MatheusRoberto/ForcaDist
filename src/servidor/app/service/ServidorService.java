@@ -122,7 +122,9 @@ public class ServidorService {
 						palavraVerificada(jsonObject, cliente);
 						break;
 					}
+					//System.out.println("passou laço");
 				}
+				//System.out.println("passou n laço");
 			} catch (IOException e) {
 				try {
 					disconnect(cliente);
@@ -301,7 +303,7 @@ public class ServidorService {
 			jsonObject.put("broadcast", true);
 			jsonObject.put("mensagem", json.get("mensagem"));
 
-			sendAll(jsonObject, cliente);
+			sendAll(jsonObject, null);
 		}
 
 		private void chatPrivate(JSONObject json, Cliente cliente) throws JSONException {
