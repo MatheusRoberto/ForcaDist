@@ -60,6 +60,7 @@ public class ClientGUI extends JFrame {
 	private ArrayList<JButton> teclado = new ArrayList<>();
 	private OnlinesTableModel tableModel;
 	private PontosTableModel pontosTableModel;
+	private boolean mestre = false;
 
 	private JPanel contentPane;
 	private JTextField txtIp;
@@ -484,20 +485,27 @@ public class ClientGUI extends JFrame {
 		DefaultListModel<String> listModel = new DefaultListModel<String>();
 		listModel.clear();
 		listVez.setModel(listModel);
-		this.lblQuantidadeDeLetras.setText("Quantidade de Letras: ");
-		this.lblPalavra.setText("");
-		this.txtrChat.setText("");
+
+		
 		if (!b) {
+			this.lblQuantidadeDeLetras.setText("Quantidade de Letras: ");
+			this.lblPalavra.setText("");
 			this.lblJogoIniciado.setText("Jogo não iniciado");
 			this.lblJogoIniciado.setForeground(Color.RED);
+			this.txtrChat.setText("");
 		}
 		this.textAreaLetrasChutadas.setText("");
 		this.textAreaPalavrasChutadas.setText("");
-		this.btnChutar.setEnabled(b);
-		this.txtChute.setEnabled(b);
-
-		for (JButton jButton : teclado) {
-			jButton.setEnabled(b);
+		if (!mestre) {
+			this.btnChutar.setEnabled(b);
+			this.txtChute.setEnabled(b);
+		}
+	}
+	
+	private void abreChute(boolean b) {
+		if (!mestre) {
+			this.btnChutar.setEnabled(b);
+			this.txtChute.setEnabled(b);
 		}
 	}
 
@@ -555,9 +563,12 @@ public class ClientGUI extends JFrame {
 					case 21:
 						imprimeVez(jsonObject);
 						break;
+					case 22:
+						alteraJogar(true);
+						break;
 					}
 				}
-			}catch (IOException e) {
+			} catch (IOException e) {
 				// TODO: handle exception
 				desconectar();
 			} catch (JSONException | HeadlessException e) {
@@ -607,6 +618,7 @@ public class ClientGUI extends JFrame {
 		this.btnChutar.setEnabled(false);
 		tableModel.limpar();
 		interfaceJogo(false);
+		alteraJogar(false);
 
 		conectado = false;
 		socket = null;
@@ -652,12 +664,27 @@ public class ClientGUI extends JFrame {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		mestre = true;
 	}
 
-	private void imprimePalavra(int tamanho) {
+	private void imprimePalavra(int tamanho, JSONObject json) throws JSONException {
 		String palavra = new String();
-		for (int i = 0; i < tamanho; i++) {
-			palavra = palavra + "_ ";
+		String atual = lblPalavra.getText();
+		atual = atual.replaceAll(" ", "");
+		if (json != null) {
+			for (int i = 0; i < tamanho; i++) {
+				if (json.getString("palavra").charAt(i) == '*')
+					if (atual.charAt(i) != '_')
+						palavra = palavra + atual.charAt(i) + " ";
+					else
+						palavra = palavra + "_ ";
+				else
+					palavra = palavra + Character.toUpperCase(json.getString("palavra").charAt(i)) + " ";
+			}
+		} else {
+			for (int i = 0; i < tamanho; i++) {
+				palavra = palavra + "_ ";
+			}
 		}
 
 		lblPalavra.setText(palavra);
@@ -666,11 +693,11 @@ public class ClientGUI extends JFrame {
 	private void jogar(JSONObject json) throws JSONException {
 		lblQuantidadeDeLetras.setText("Quantidade de Letras: " + String.valueOf(json.getInt("TamanhoPalavra")));
 
-		imprimePalavra(json.getInt("TamanhoPalavra"));
-
-		imprimeVez(json);
+		imprimePalavra(json.getInt("TamanhoPalavra"), null);
 
 		interfaceJogo(true);
+
+		imprimeVez(json);
 	}
 
 	private void imprimeVez(JSONObject json) throws JSONException {
@@ -706,7 +733,7 @@ public class ClientGUI extends JFrame {
 				jsonObject.put("mensagem", txtTextoChat.getText());
 				try {
 					service.send(jsonObject);
-					//txtrChat.append("eu: " + txtTextoChat.getText() + "\n");
+					// txtrChat.append("eu: " + txtTextoChat.getText() + "\n");
 					txtTextoChat.setText("");
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -730,7 +757,8 @@ public class ClientGUI extends JFrame {
 	private void chutaLetra(char c) throws JSONException {
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("id", 13);
-		jsonObject.put("letra", Character.toLowerCase(c));
+		jsonObject.put("letra", String.valueOf(Character.toLowerCase(c)));
+		alteraJogar(false);
 		try {
 			service.send(jsonObject);
 		} catch (IOException e) {
@@ -739,9 +767,13 @@ public class ClientGUI extends JFrame {
 	}
 
 	private void recebeLetra(JSONObject json) throws JSONException {
-		System.out.println(json.toString());
-		textAreaLetrasChutadas
-				.setText(textAreaLetrasChutadas.getText() + " " + Character.toUpperCase(json.getInt("letra")));
+		// System.out.println(json.toString());
+		// System.out.println(lblPalavra.getText().length());
+
+		imprimePalavra(lblPalavra.getText().length() / 2, json);
+
+		textAreaLetrasChutadas.setText(
+				textAreaLetrasChutadas.getText() + " " + Character.toUpperCase(json.getString("letra").charAt(0)));
 	}
 
 	private void chutaPalavra(String s) throws JSONException {
@@ -753,6 +785,8 @@ public class ClientGUI extends JFrame {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		alteraJogar(false);
+		abreChute(false);
 	}
 
 	private void recebeChutePalavra(JSONObject json) throws JSONException {
@@ -780,6 +814,7 @@ public class ClientGUI extends JFrame {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		mestre = false;
 	}
 
 	private void pontuacao(JSONObject json) throws HeadlessException, JSONException {
@@ -799,5 +834,15 @@ public class ClientGUI extends JFrame {
 		pontosTableModel.limpar();
 		pontosTableModel.addListaClientes(listaclientes);
 
+	}
+
+	private void alteraJogar(boolean b) {
+		if (b) {
+			JOptionPane.showMessageDialog(null, "É sua vez!", "Sua vez!", JOptionPane.INFORMATION_MESSAGE);
+			this.requestFocus();
+		}
+		for (JButton jButton : teclado) {
+			jButton.setEnabled(b);
+		}
 	}
 }

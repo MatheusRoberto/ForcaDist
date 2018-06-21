@@ -1,20 +1,22 @@
 package servidor.app;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JTextField;
 
 import servidor.app.service.ServidorService;
 
-public class Servidor {
+public class Servidor implements Runnable{
 
-	public static void main(String[] args) {
-		JLabel lblMessage = new JLabel("Server Port: ");
-		JTextField txtPort = new JTextField("20000");
-		Object[] texts = { lblMessage, txtPort };
-		JOptionPane.showMessageDialog(null, texts);
-
-		ServidorService service = new ServidorService();
-		service.conectar(Integer.parseInt(txtPort.getText()));
+	private ServidorService service;
+	private int porta;
+	
+	public Servidor(int porta) {
+		// TODO Auto-generated constructor stub
+		service = new ServidorService();
+		this.porta = porta;
+	}
+	
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		service.conectar(porta);
 	}
 
 }
