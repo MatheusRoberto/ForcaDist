@@ -652,6 +652,7 @@ public class ClientGUI extends JFrame {
 	}
 
 	private void selecionaPalavra() throws JSONException {
+		mestre = true;
 		String palavra = new String();
 		while (palavra == null || palavra.isEmpty()) {
 			palavra = JOptionPane.showInputDialog(this, "Digite uma palavra para o jogo iniciar!");
@@ -664,7 +665,6 @@ public class ClientGUI extends JFrame {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		mestre = true;
 	}
 
 	private void imprimePalavra(int tamanho, JSONObject json) throws JSONException {
@@ -775,8 +775,9 @@ public class ClientGUI extends JFrame {
 
 		if (vez && !json.getBoolean("correto")) {
 			JOptionPane.showMessageDialog(null, "Você errou!", "Errou!!!", JOptionPane.INFORMATION_MESSAGE);
-			vez = false;
+			//vez = false;
 		}
+		vez = false;
 		
 		imprimePalavra(lblPalavra.getText().length() / 2, json);
 
@@ -856,6 +857,6 @@ public class ClientGUI extends JFrame {
 	}
 	
 	private void imprimeCampeao(JSONObject json) throws HeadlessException, JSONException {
-		JOptionPane.showMessageDialog(null, "Campeão!", json.getString("campeao"), JOptionPane.INFORMATION_MESSAGE);
+		JOptionPane.showMessageDialog(null, "Campeão: "+json.getString("campeao"), "Campeão!", JOptionPane.INFORMATION_MESSAGE);
 	}
 }

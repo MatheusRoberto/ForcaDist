@@ -18,7 +18,6 @@ import javax.swing.JTable;
 
 import cliente.app.regras.OnlinesTableModel;
 import cliente.app.util.Cliente;
-import cliente.app.util.Tempo;
 
 import javax.swing.ListSelectionModel;
 import java.awt.event.ActionListener;
@@ -518,7 +517,7 @@ public class ServerGUI extends JFrame {
 				int numSorteado = r.nextInt(mapOnlines.size());
 				if (!ordem.contains(s.get(numSorteado))) {
 					s.get(numSorteado).setOrdem(numSorteado);
-					s.get(numSorteado).setErros(6 / mapOnlines.size());
+					s.get(numSorteado).setErros(6 / (mapOnlines.size()-1));
 					ordem.add(s.get(numSorteado));
 				}
 			}
@@ -752,7 +751,7 @@ public class ServerGUI extends JFrame {
 			ordem.clear();
 			for (int i = 1; i < sorteio.size(); i++) {
 				sorteio.get(i).setOrdem(i - 1);
-				sorteio.get(i).setErros(6 / sorteio.size() - 1);
+				sorteio.get(i).setErros(6 / (sorteio.size() - 1));
 				sorteio.get(i).setAcertou(false);
 				sorteio.get(i).setNjogados(0);
 				ordem.add(sorteio.get(i));
@@ -836,6 +835,7 @@ public class ServerGUI extends JFrame {
 			// System.out.println("Terminou");*/
 		}
 
+		@SuppressWarnings("unused")
 		private void passaVez(Cliente cliente) throws JSONException {
 			cliente.setErros(cliente.getErros() - 1);
 			cliente.setNjogados(cliente.getNjogados() + 1);
