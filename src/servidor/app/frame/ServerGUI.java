@@ -18,6 +18,7 @@ import javax.swing.JTable;
 
 import cliente.app.regras.OnlinesTableModel;
 import cliente.app.util.Cliente;
+import cliente.app.util.Tempo;
 
 import javax.swing.ListSelectionModel;
 import java.awt.event.ActionListener;
@@ -223,7 +224,7 @@ public class ServerGUI extends JFrame {
 		btnIniciar.setEnabled(true);
 		btnFechar.setEnabled(false);
 		txtPorta.setEditable(true);
-		//txtrStatus.setText("");
+		// txtrStatus.setText("");
 	}
 
 	private void ipMaquina() throws SocketException {
@@ -242,9 +243,9 @@ public class ServerGUI extends JFrame {
 	}
 
 	private void adicionaStatus(String s) {
-		s = s+"\n";
+		s = s + "\n";
 		txtrStatus.append(s);
-		//txtrStatus.requestFocus();
+		// txtrStatus.requestFocus();
 		txtrStatus.setCaretPosition(txtrStatus.getText().length());
 	}
 
@@ -373,6 +374,16 @@ public class ServerGUI extends JFrame {
 				e.printStackTrace();
 			}
 
+			/*
+			 * System.out.println(cliente.tempoExcedido() + " " + cliente.isSalvo() +
+			 * " "+iniciado); if (!cliente.tempoExcedido() && !cliente.isSalvo() &&
+			 * iniciado) { System.out.println("Excedeu o tempo"); if (cliente.getOrdem() ==
+			 * 0) { System.out.println("Mestre"); try { novaRodada(); } catch (JSONException
+			 * e) { // TODO Auto-generated catch block e.printStackTrace(); } } else {
+			 * System.out.println("Vez"); try { passaVez(cliente); } catch (JSONException e)
+			 * { // TODO Auto-generated catch block e.printStackTrace(); } } }
+			 */
+
 		}
 
 		private boolean connect(JSONObject json, PrintWriter output) throws JSONException, IOException {
@@ -425,6 +436,10 @@ public class ServerGUI extends JFrame {
 				lblStatusJogo = new JLabel("Jogo não iniciado");
 				lblStatusJogo.setForeground(Color.RED);
 				lblMestre.setText("Mestre: ");
+				ordem.clear();
+				sorteio.clear();
+				mapPacotes.clear();
+				letrasChutadas.clear();
 			}
 
 			sendOnlines();
@@ -521,11 +536,22 @@ public class ServerGUI extends JFrame {
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put("id", 10);
 
+			cliente.tempoMestre();
 			try {
 				send(jsonObject, cliente);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+
+			/*
+			 * Thread t = new Thread(new ListenerSocket(sock, cliente));
+			 * 
+			 * while (true) { //
+			 * System.out.println("esperando: "+!ordem.get(vez).tempoExcedido()); if
+			 * (!cliente.isSalvo() && !cliente.tempoExcedido()) {
+			 * System.out.println("60 Segundos excedido"); t.interrupt(); novaRodada();
+			 * break; } else if (cliente.isSalvo()) { t.interrupt(); break; } }
+			 */
 		}
 
 		private ArrayList<String> enviaVez(Cliente cliente) {
@@ -540,6 +566,7 @@ public class ServerGUI extends JFrame {
 		private void palavraEscolhida(JSONObject json, Cliente cliente) throws JSONException {
 			palavra = json.getString("palavra");
 			acertaram = false;
+			cliente.setSalvo(true);
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put("id", 12);
 			jsonObject.put("TamanhoPalavra", json.getString("palavra").length());
@@ -606,9 +633,11 @@ public class ServerGUI extends JFrame {
 
 		private void confereLetra(JSONObject json, Cliente cliente) throws JSONException {
 			JSONObject jsonObject = new JSONObject();
+			cliente.setSalvo(true);
 			jsonObject.put("id", 14);
 			jsonObject.put("letra", json.getString("letra"));
-			if (!letrasChutadas.contains(json.getString("letra")) && palavra.indexOf(json.getString("letra").charAt(0)) != -1) {
+			if (!letrasChutadas.contains(json.getString("letra"))
+					&& palavra.indexOf(json.getString("letra").charAt(0)) != -1) {
 				jsonObject.put("correto", true);
 				jsonObject.put("palavra", indicesLetra(json.getString("letra")));
 				letrasChutadas.add(json.getString("letra"));
@@ -618,7 +647,7 @@ public class ServerGUI extends JFrame {
 				cliente.setErros(cliente.getErros() - 1);
 				if (cliente.getErros() == 0) {
 					ordem.remove(cliente);
-					desconexao(cliente);
+					// desconexao(cliente);
 				}
 			}
 
@@ -662,7 +691,7 @@ public class ServerGUI extends JFrame {
 			jsonObject.put("palavra", palavra);
 			jsonObject.put("nome", ordem.get(0).getNome());
 
-			sendAll(jsonObject, ordem.get(0));
+			sendAll(jsonObject, null);
 		}
 
 		private void palavraVerificada(JSONObject json, Cliente cliente) throws JSONException {
@@ -670,7 +699,7 @@ public class ServerGUI extends JFrame {
 			mapPacotes.put(cliente.getNome(), json);
 			if (mapPacotes.size() >= (mapOnlines.size() - 1)) {
 				for (Entry<String, Cliente> kv : mapOnlines.entrySet()) {
-					if (!mapPacotes.containsKey(kv.getKey()) && !kv.getValue().equals(ordem.get(0))) {
+					if (!mapPacotes.containsKey(kv.getKey())) {
 						key = false;
 					}
 				}
@@ -723,8 +752,9 @@ public class ServerGUI extends JFrame {
 			ordem.clear();
 			for (int i = 1; i < sorteio.size(); i++) {
 				sorteio.get(i).setOrdem(i - 1);
-				sorteio.get(i).setErros(6 / sorteio.size()-1);
+				sorteio.get(i).setErros(6 / sorteio.size() - 1);
 				sorteio.get(i).setAcertou(false);
+				sorteio.get(i).setNjogados(0);
 				ordem.add(sorteio.get(i));
 			}
 			sorteio.get(0).setOrdem(sorteio.size() - 1);
@@ -753,7 +783,7 @@ public class ServerGUI extends JFrame {
 				adicionaStatus("Mestre: " + ordem.get(0).getNome());
 				lblMestre.setText("Mestre: " + ordem.get(0).getNome());
 				selecionaMestre(ordem.get(0));
-			}else {
+			} else {
 				JSONObject jsonObject = new JSONObject();
 				jsonObject.put("id", 23);
 				jsonObject.put("campeao", campeao);
@@ -777,12 +807,57 @@ public class ServerGUI extends JFrame {
 		private void enviaVez() throws JSONException {
 			JSONObject jsonObject = new JSONObject();
 			jsonObject.put("id", 22);
+			ordem.get(vez).tempoJogada();
+			ordem.get(vez).setSalvo(false);
+
 			try {
 				send(jsonObject, ordem.get(vez));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+
+			/*Tempo timer = new Tempo(cliente);
+			Thread t = new Thread(timer);
+			t.start();
+
+			while (true) {
+				// System.out.println("esperando: "+!ordem.get(vez).tempoExcedido());
+				if (!timer.getCliente().isSalvo() && !timer.getCliente().tempoExcedido()) {
+					System.out.println("15 Segundos excedido");
+					t.interrupt();
+					passaVez(timer.getCliente());
+					break;
+				} else if (timer.getCliente().isSalvo()) {
+					t.interrupt();
+					break;
+				}
+			}
+			// System.out.println("Terminou");*/
+		}
+
+		private void passaVez(Cliente cliente) throws JSONException {
+			cliente.setErros(cliente.getErros() - 1);
+			cliente.setNjogados(cliente.getNjogados() + 1);
+			System.out.println(cliente.getErros() + " " + cliente.getNjogados());
+			if (cliente.getNjogados() == 2)
+				disconnect(cliente);
+			else {
+				vez++;
+				if (vez >= ordem.size())
+					vez = 1;
+				JSONObject jsonObject = new JSONObject();
+				jsonObject.put("id", 24);
+				try {
+					send(jsonObject, cliente);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				enviaVez();
+			}
+
 		}
 
 	}

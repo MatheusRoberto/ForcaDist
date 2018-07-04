@@ -61,6 +61,7 @@ public class ClientGUI extends JFrame {
 	private OnlinesTableModel tableModel;
 	private PontosTableModel pontosTableModel;
 	private boolean mestre = false;
+	private boolean vez = false;
 
 	private JPanel contentPane;
 	private JTextField txtIp;
@@ -486,7 +487,6 @@ public class ClientGUI extends JFrame {
 		listModel.clear();
 		listVez.setModel(listModel);
 
-		
 		if (!b) {
 			this.lblQuantidadeDeLetras.setText("Quantidade de Letras: ");
 			this.lblPalavra.setText("");
@@ -496,13 +496,10 @@ public class ClientGUI extends JFrame {
 		}
 		this.textAreaLetrasChutadas.setText("");
 		this.textAreaPalavrasChutadas.setText("");
-		if (!mestre) {
-			this.btnChutar.setEnabled(b);
-			this.txtChute.setEnabled(b);
-		}
 	}
-	
+
 	private void abreChute(boolean b) {
+		//System.out.println("Abre chute: "+mestre);
 		if (!mestre) {
 			this.btnChutar.setEnabled(b);
 			this.txtChute.setEnabled(b);
@@ -565,6 +562,9 @@ public class ClientGUI extends JFrame {
 						break;
 					case 22:
 						alteraJogar(true);
+						break;
+					case 23:
+						imprimeCampeao(jsonObject);
 						break;
 					}
 				}
@@ -654,7 +654,7 @@ public class ClientGUI extends JFrame {
 	private void selecionaPalavra() throws JSONException {
 		String palavra = new String();
 		while (palavra == null || palavra.isEmpty()) {
-			palavra = JOptionPane.showInputDialog(this, "Digite uma palavra para o jogo iniciar?");
+			palavra = JOptionPane.showInputDialog(this, "Digite uma palavra para o jogo iniciar!");
 		}
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("id", 11);
@@ -698,6 +698,8 @@ public class ClientGUI extends JFrame {
 		interfaceJogo(true);
 
 		imprimeVez(json);
+		
+		abreChute(true);
 	}
 
 	private void imprimeVez(JSONObject json) throws JSONException {
@@ -759,6 +761,7 @@ public class ClientGUI extends JFrame {
 		jsonObject.put("id", 13);
 		jsonObject.put("letra", String.valueOf(Character.toLowerCase(c)));
 		alteraJogar(false);
+		vez = true;
 		try {
 			service.send(jsonObject);
 		} catch (IOException e) {
@@ -770,6 +773,11 @@ public class ClientGUI extends JFrame {
 		// System.out.println(json.toString());
 		// System.out.println(lblPalavra.getText().length());
 
+		if (vez && !json.getBoolean("correto")) {
+			JOptionPane.showMessageDialog(null, "Você errou!", "Errou!!!", JOptionPane.INFORMATION_MESSAGE);
+			vez = false;
+		}
+		
 		imprimePalavra(lblPalavra.getText().length() / 2, json);
 
 		textAreaLetrasChutadas.setText(
@@ -779,7 +787,7 @@ public class ClientGUI extends JFrame {
 	private void chutaPalavra(String s) throws JSONException {
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("id", 16);
-		jsonObject.put("palavra", s);
+		jsonObject.put("palavra", s.toLowerCase());
 		try {
 			service.send(jsonObject);
 		} catch (IOException e) {
@@ -814,10 +822,11 @@ public class ClientGUI extends JFrame {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		mestre = false;
+
 	}
 
 	private void pontuacao(JSONObject json) throws HeadlessException, JSONException {
+		mestre = false;
 		if (json.getBoolean("palavraAceita"))
 			JOptionPane.showMessageDialog(null, "Sim", "Palavra Aceita?", JOptionPane.INFORMATION_MESSAGE);
 		else
@@ -844,5 +853,9 @@ public class ClientGUI extends JFrame {
 		for (JButton jButton : teclado) {
 			jButton.setEnabled(b);
 		}
+	}
+	
+	private void imprimeCampeao(JSONObject json) throws HeadlessException, JSONException {
+		JOptionPane.showMessageDialog(null, "Campeão!", json.getString("campeao"), JOptionPane.INFORMATION_MESSAGE);
 	}
 }

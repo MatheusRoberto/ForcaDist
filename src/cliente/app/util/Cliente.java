@@ -18,6 +18,7 @@ public class Cliente {
 	private long tempoUltimoPacote;
 	private Calendar tempoEspera;
 	private int njogados;
+	private boolean salvo;
 	
 	public Cliente() {
 		// TODO Auto-generated constructor stub
@@ -34,6 +35,7 @@ public class Cliente {
 		setAceita(false);
 		setPontos(0);
 		setAcertou(false);
+		setNjogados(0);
 	}
 	
 	public String getNome() {
@@ -129,19 +131,27 @@ public class Cliente {
 		this.njogados = njogados;
 	}
 
+	public boolean isSalvo() {
+		return salvo;
+	}
+
+	public void setSalvo(boolean salvo) {
+		this.salvo = salvo;
+	}
+
 	public void tempoJogada() {
 		Calendar c = Calendar.getInstance();
-		System.out.println(c.getTime());
+		//System.out.println(c.getTime());
 		c.add(Calendar.SECOND, 15);
-		System.out.println(c.getTime());
+		//System.out.println(c.getTime());
 		setTempoEspera(c);
 	}
 	
 	public void tempoMestre() {
 		Calendar c = Calendar.getInstance();
-		System.out.println(c.getTime());
+		//System.out.println(c.getTime());
 		c.add(Calendar.SECOND, 60);
-		System.out.println(c.getTime());
+		//System.out.println(c.getTime());
 		setTempoEspera(c);
 	}
 	
